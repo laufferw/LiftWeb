@@ -10,17 +10,22 @@ test("login loads", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
-test("log form loads", async ({ page }) => {
-  await page.goto("/log/new");
-  await expect(page.getByRole("heading", { name: "Log a workout" })).toBeVisible();
+test("explore has discovery UI", async ({ page }) => {
+  await page.goto("/explore");
+  await expect(page.getByRole("heading", { name: "Explore the community" })).toBeVisible();
+  await expect(page.getByPlaceholder("Search by lift, user, note, or tag")).toBeVisible();
 });
 
-test("workouts page loads", async ({ page }) => {
-  await page.goto("/workouts");
-  await expect(page.getByRole("heading", { name: "Workouts" })).toBeVisible();
-});
-
-test("lifts page loads", async ({ page }) => {
+test("guarded routes show access/setup states", async ({ page }) => {
   await page.goto("/lifts");
   await expect(page.getByRole("heading", { name: "Lifts" })).toBeVisible();
+  await expect(
+    page.getByText(/Supabase is not configured|Sign in to continue|Finish profile setup first/),
+  ).toBeVisible();
+
+  await page.goto("/workouts");
+  await expect(page.getByRole("heading", { name: "Workouts" })).toBeVisible();
+  await expect(
+    page.getByText(/Supabase is not configured|Sign in to continue|Finish profile setup first/),
+  ).toBeVisible();
 });
