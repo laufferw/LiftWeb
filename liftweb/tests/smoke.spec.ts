@@ -28,4 +28,7 @@ test("guarded routes show access/setup states", async ({ page }) => {
   await expect(
     page.getByText(/Supabase is not configured|Sign in to continue|Finish profile setup first/),
   ).toBeVisible();
+
+  await page.goto("/moderation/reports");
+  await expect(page.getByRole("heading", { name: "Moderation queue" })).toBeVisible();
 });
