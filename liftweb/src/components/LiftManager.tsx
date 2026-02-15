@@ -182,7 +182,16 @@ export default function LiftManager() {
   };
 
   const handleDelete = async (liftId: string) => {
-    await supabase.from("lifts").delete().eq("id", liftId);
+    const confirmed = window.confirm("Delete this lift?");
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("lifts").delete().eq("id", liftId);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setMessage("Lift deleted.");
     await loadLifts();
   };
 
