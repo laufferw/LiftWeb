@@ -375,7 +375,10 @@ export default function ProfileDetail({ handle }: ProfileDetailProps) {
           </div>
         ) : logs.length === 0 ? (
           <div className="rounded-3xl border border-border bg-surface p-6 text-sm text-muted shadow-card">
-            No logs yet.
+            No public logs yet.
+            {isOwner ? (
+              <span> Start by <Link href="/log/new" className="font-semibold text-ink">logging your first workout</Link>.</span>
+            ) : null}
           </div>
         ) : (
           logs.map((log) => <LogCard key={log.id} log={log} />)

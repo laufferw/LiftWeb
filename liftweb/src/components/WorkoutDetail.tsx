@@ -299,19 +299,27 @@ export default function WorkoutDetail({ id }: WorkoutDetailProps) {
             </button>
           </div>
         ) : (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {template.lift_ids.map((liftId) => (
-              <span
-                key={liftId}
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  template.main_lift_id === liftId
-                    ? "bg-accentSoft text-accent"
-                    : "bg-base/80 text-muted"
-                }`}
-              >
-                {liftMap[liftId]?.name ?? "Lift"}
-              </span>
-            ))}
+          <div className="mt-4">
+            {template.lift_ids.length === 0 ? (
+              <div className="rounded-2xl border border-border bg-base/70 p-4 text-sm text-muted">
+                This template has no lifts yet. <Link href="/workouts/new" className="font-semibold text-ink">Create a new workout</Link> or edit this one.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {template.lift_ids.map((liftId) => (
+                  <span
+                    key={liftId}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      template.main_lift_id === liftId
+                        ? "bg-accentSoft text-accent"
+                        : "bg-base/80 text-muted"
+                    }`}
+                  >
+                    {liftMap[liftId]?.name ?? "Lift"}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
