@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import LogForm from "@/components/LogForm";
 import PageShell from "@/components/PageShell";
+import FeatureGate from "@/components/FeatureGate";
 
 export default function NewLogPage() {
   return (
@@ -9,15 +10,17 @@ export default function NewLogPage() {
         Share your session details publicly. Logs are visible to everyone.
       </p>
       <div className="mt-6">
-        <Suspense
-          fallback={
-            <div className="rounded-2xl border border-border bg-white px-4 py-3 text-sm text-muted">
-              Loading log form...
-            </div>
-          }
-        >
-          <LogForm />
-        </Suspense>
+        <FeatureGate requireAuth requireProfile title="Log a workout">
+          <Suspense
+            fallback={
+              <div className="rounded-2xl border border-border bg-white px-4 py-3 text-sm text-muted">
+                Loading log form...
+              </div>
+            }
+          >
+            <LogForm />
+          </Suspense>
+        </FeatureGate>
       </div>
     </PageShell>
   );
