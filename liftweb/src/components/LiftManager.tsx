@@ -99,7 +99,31 @@ export default function LiftManager() {
   };
 
   useEffect(() => {
-    loadLifts();
+    let active = true;
+
+    const run = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) {
+        if (active) setLifts([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("lifts")
+        .select(
+          "id,name,goal_weight,week_number,top_set_start_percent,backoff_percent,cycle_start_weight,top_set_sets,top_set_reps,backoff_sets,backoff_reps,alt_top_set_sets,alt_top_set_reps,alt_backoff_sets,alt_backoff_reps,alt_day_top_set_percent,alt_day_backoff_percent",
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (active) setLifts((data ?? []) as LiftRow[]);
+    };
+
+    void run();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const canSave = useMemo(() => state.name.trim().length > 0, [state.name]);
