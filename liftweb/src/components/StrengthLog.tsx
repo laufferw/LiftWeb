@@ -40,6 +40,9 @@ export default function StrengthLog() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("");
+  // sessionKey forces a full remount each time the log page is visited,
+  // ensuring all checkboxes start unchecked on every new workout.
+  const [sessionKey] = useState(() => Date.now());
 
   useEffect(() => {
     const load = async () => {
@@ -88,20 +91,26 @@ export default function StrengthLog() {
 
         return {
           exercise: ex,
+          // completed is always false on a new workout — never carry over from DB or prior state
           sets: Array.from({ length: numSets }, () => ({
             weight: weight ? String(weight) : "",
             reps: String(repCount),
-            completed: false,
+            completed: false as const,
           })),
         };
       });
 
-      setExerciseSets(initial);
+      // Final safety pass: ensure all completed flags are false regardless of any data source
+      const clean = initial.map((es) => ({
+        ...es,
+        sets: es.sets.map((s) => ({ ...s, completed: false })),
+      }));
+      setExerciseSets(clean);
       setLoading(false);
     };
 
     load();
-  }, []);
+  }, [sessionKey]);
 
   const updateSet = (exIdx: number, setIdx: number, field: keyof SetEntry, value: string | boolean) => {
     setExerciseSets((prev) => {
@@ -124,7 +133,7 @@ export default function StrengthLog() {
           {
             weight: lastSet?.weight ?? "",
             reps: lastSet?.reps ?? String(next[exIdx].exercise.default_reps),
-            completed: false,
+            completed: false as const, // new sets always start unchecked
           },
         ],
       };

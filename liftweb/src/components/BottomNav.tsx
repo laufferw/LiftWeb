@@ -30,17 +30,16 @@ export default function BottomNav() {
 
   const navItems = useMemo(
     () => [
-      { href: "/", label: "Feed" },
-      { href: "/log/new", label: "Log" },
-      { href: "/lifts", label: "Lifts" },
-      { href: "/workouts", label: "Workouts" },
+      { href: "/strength", label: "Strength" },
+      { href: "/strength/log", label: "Log" },
+      { href: "/strength/history", label: "History" },
       { href: profileHandle ? `/u/${profileHandle}` : "/login", label: "Profile" },
     ],
     [profileHandle],
   );
 
   return (
-    <nav className="fixed bottom-4 left-1/2 z-20 w-[min(92%,420px)] -translate-x-1/2 rounded-full border border-border bg-surface/95 px-4 py-2 shadow-card backdrop-blur">
+    <nav className="fixed bottom-4 left-1/2 z-20 w-[min(95%,480px)] -translate-x-1/2 rounded-full border border-border bg-surface/95 px-4 py-2 shadow-card backdrop-blur">
       <ul className="flex items-center justify-between">
         {navItems.map((item) => (
           <li key={item.href}>
