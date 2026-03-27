@@ -28,7 +28,6 @@ const EXERCISE_ORDER = [
   "Squat",
   "Bench",
   "OHP",
-  "Pull-up",
   "Romanian Deadlift",
   "Pendlay Row",
   "Face Pull",
