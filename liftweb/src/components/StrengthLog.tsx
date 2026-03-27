@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -40,9 +40,10 @@ export default function StrengthLog() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("");
-  // sessionKey forces a full remount each time the log page is visited,
-  // ensuring all checkboxes start unchecked on every new workout.
-  const [sessionKey] = useState(() => Date.now());
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // mountKey is set once on mount and never changes — this is what forces
+  // a genuine fresh state on every visit (not reused across nav events).
+  const [mountKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     const load = async () => {
@@ -110,7 +111,7 @@ export default function StrengthLog() {
     };
 
     load();
-  }, [sessionKey]);
+  }, [mountKey]);
 
   const updateSet = (exIdx: number, setIdx: number, field: keyof SetEntry, value: string | boolean) => {
     setExerciseSets((prev) => {
@@ -140,6 +141,10 @@ export default function StrengthLog() {
       return next;
     });
   };
+
+  const handleCancel = useCallback(() => {
+    router.push("/strength");
+  }, [router]);
 
   const handleFinish = async () => {
     setStatus("saving");
@@ -266,6 +271,37 @@ export default function StrengthLog() {
       >
         {status === "saving" ? "Saving..." : "Finish Workout"}
       </button>
+
+      {!showCancelConfirm ? (
+        <button
+          type="button"
+          onClick={() => setShowCancelConfirm(true)}
+          className="w-full rounded-full border border-border bg-white px-5 py-3 text-sm font-semibold text-muted transition hover:border-ink/30 hover:text-ink"
+        >
+          Cancel Workout
+        </button>
+      ) : (
+        <div className="rounded-2xl border border-border bg-white px-5 py-4 text-center space-y-3">
+          <p className="text-sm text-ink font-medium">Discard this workout?</p>
+          <p className="text-xs text-muted">Nothing will be saved.</p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowCancelConfirm(false)}
+              className="flex-1 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/30"
+            >
+              Keep Going
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="flex-1 rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       {message ? (
         <p className="text-sm text-muted" role="status">
