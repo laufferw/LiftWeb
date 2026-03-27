@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import ChatWidget from "@/components/ChatWidget";
 
 const bodyFont = Manrope({
   variable: "--font-body",
@@ -41,6 +42,7 @@ export default function RootLayout({
         className={`${bodyFont.variable} ${displayFont.variable} antialiased bg-base text-ink`}
       >
         {children}
+        <ChatWidget />
       </body>
     </html>
   );

@@ -35,13 +35,14 @@ const EXERCISE_ORDER = [
 
 export default function StrengthLog() {
   const router = useRouter();
+  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
   const [exerciseSets, setExerciseSets] = useState<ExerciseSets[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  // mountKey is set once on mount and never changes — this is what forces
-  // a genuine fresh state on every visit (not reused across nav events).
+  const [showAddExercise, setShowAddExercise] = useState(false);
+  const [exerciseSearch, setExerciseSearch] = useState("");
   const [mountKey] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
@@ -57,6 +58,9 @@ export default function StrengthLog() {
         setLoading(false);
         return;
       }
+
+      // Store all exercises for the add-exercise picker
+      setAllExercises(exercises);
 
       const sorted = [...exercises].sort((a, b) => {
         const ai = EXERCISE_ORDER.indexOf(a.name);
@@ -91,7 +95,6 @@ export default function StrengthLog() {
 
         return {
           exercise: ex,
-          // completed is always false on a new workout — never carry over from DB or prior state
           sets: Array.from({ length: numSets }, () => ({
             weight: weight ? String(weight) : "",
             reps: String(repCount),
@@ -100,7 +103,6 @@ export default function StrengthLog() {
         };
       });
 
-      // Final safety pass: ensure all completed flags are false regardless of any data source
       const clean = initial.map((es) => ({
         ...es,
         sets: es.sets.map((s) => ({ ...s, completed: false })),
@@ -133,13 +135,35 @@ export default function StrengthLog() {
           {
             weight: lastSet?.weight ?? "",
             reps: lastSet?.reps ?? String(next[exIdx].exercise.default_reps),
-            completed: false as const, // new sets always start unchecked
+            completed: false as const,
           },
         ],
       };
       return next;
     });
   };
+
+  // Remove an exercise from the current session
+  const removeExercise = (exIdx: number) => {
+    setExerciseSets((prev) => prev.filter((_, i) => i !== exIdx));
+  };
+
+  // Add an exercise to the current session
+  const addExercise = useCallback((exercise: Exercise) => {
+    setExerciseSets((prev) => [
+      ...prev,
+      {
+        exercise,
+        sets: Array.from({ length: exercise.default_sets }, () => ({
+          weight: "",
+          reps: String(exercise.default_reps),
+          completed: false,
+        })),
+      },
+    ]);
+    setShowAddExercise(false);
+    setExerciseSearch("");
+  }, []);
 
   const handleCancel = useCallback(() => {
     router.push("/strength");
@@ -188,9 +212,7 @@ export default function StrengthLog() {
       return;
     }
 
-    const { error: setsError } = await supabase
-      .from("strength_sets")
-      .insert(sets);
+    const { error: setsError } = await supabase.from("strength_sets").insert(sets);
 
     if (setsError) {
       setStatus("error");
@@ -200,6 +222,15 @@ export default function StrengthLog() {
 
     router.push("/strength?saved=1");
   };
+
+  // Exercises not already in the current session
+  const availableExercises = allExercises.filter(
+    (ex) => !exerciseSets.some((es) => es.exercise.id === ex.id),
+  );
+
+  const filteredExercises = availableExercises.filter((ex) =>
+    ex.name.toLowerCase().includes(exerciseSearch.toLowerCase()),
+  );
 
   if (loading) {
     return (
@@ -214,8 +245,18 @@ export default function StrengthLog() {
       {exerciseSets.map((es, exIdx) => (
         <div key={es.exercise.id} className="rounded-2xl border border-border bg-white px-5 py-4">
           <div className="flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold text-ink">{es.exercise.name}</h3>
-            <span className="text-xs text-muted">{es.exercise.category}</span>
+            <div>
+              <h3 className="text-sm font-semibold text-ink">{es.exercise.name}</h3>
+              <span className="text-xs text-muted">{es.exercise.category}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => removeExercise(exIdx)}
+              className="text-xs text-muted hover:text-red-400 transition-colors ml-2 px-1.5 py-0.5 rounded hover:bg-red-50"
+              title="Remove exercise"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="mt-3 space-y-2">
@@ -261,6 +302,56 @@ export default function StrengthLog() {
           </button>
         </div>
       ))}
+
+      {/* Add Exercise */}
+      {!showAddExercise ? (
+        <button
+          type="button"
+          onClick={() => setShowAddExercise(true)}
+          disabled={availableExercises.length === 0}
+          className="w-full rounded-2xl border border-dashed border-border bg-white px-5 py-3 text-sm font-semibold text-muted transition hover:border-accent/40 hover:text-accent disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          + Add Exercise
+        </button>
+      ) : (
+        <div className="rounded-2xl border border-border bg-white px-5 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-ink">Add Exercise</p>
+            <button
+              type="button"
+              onClick={() => { setShowAddExercise(false); setExerciseSearch(""); }}
+              className="text-xs text-muted hover:text-ink transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          <input
+            type="text"
+            value={exerciseSearch}
+            onChange={(e) => setExerciseSearch(e.target.value)}
+            placeholder="Search exercises..."
+            autoFocus
+            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-ink/40"
+          />
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {filteredExercises.length === 0 ? (
+              <p className="text-xs text-muted py-2">No exercises found.</p>
+            ) : (
+              filteredExercises.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  onClick={() => addExercise(ex)}
+                  className="w-full text-left px-3 py-2 rounded-xl text-sm text-ink hover:bg-accent/5 hover:text-accent transition-colors flex items-center justify-between"
+                >
+                  <span>{ex.name}</span>
+                  <span className="text-xs text-muted">{ex.category}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <button
         type="button"
